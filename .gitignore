@@ -1,6 +1,8 @@
 node_modules/
 dist/
-release/
+release/win-unpacked/
+release/builder-debug.yml
+release/builder-effective-config.yaml
 *.local
 .DS_Store
 Thumbs.db
