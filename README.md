@@ -8,7 +8,7 @@ Application flashcards **français → russe** pour Windows.
 - **Espace** pour retourner la carte
 - **Flèches ← →** pour naviguer entre les cartes
 - **4 thèmes** : Verbes, Adjectifs, Noms, Mots de liaison
-- **Verbes** : choix du temps (infinitif, présent, passé composé, imparfait, futur, impératif) avec phrase d'exemple FR/RU
+- **Verbes** : choix du temps (infinitif, présent, passé composé) avec phrase d'exemple FR/RU
 - **Playlists** : Connu, À retenir, Pas connu — classez vos cartes après les avoir retournées
 - Progression sauvegardée automatiquement (localStorage)
 

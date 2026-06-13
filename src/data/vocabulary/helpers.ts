@@ -28,9 +28,6 @@ export function basicVerbExamples(
     { tense: 'infinitif', label: 'Infinitif', french: `Il faut ${infinitif}.`, russian: `Нужно ${ruInf}.` },
     { tense: 'present', label: 'Présent', french: presentFr, russian: presentRu },
     { tense: 'passe_compose', label: 'Passé composé', french: passeFr, russian: passeRu },
-    { tense: 'imparfait', label: 'Imparfait', french: '—', russian: '—' },
-    { tense: 'futur', label: 'Futur', french: '—', russian: '—' },
-    { tense: 'imperatif', label: 'Impératif', french: '—', russian: '—' },
   ]
 }
 

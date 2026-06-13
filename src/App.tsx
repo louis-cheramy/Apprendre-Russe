@@ -9,6 +9,8 @@ import type { Category, Playlist, VerbTense } from './types'
 
 type View = 'study' | 'playlist'
 
+const STUDY_CATEGORIES: (Category | 'all')[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien']
+
 export default function App() {
   const { setCardPlaylist, getCardPlaylist, getCardsInPlaylist, counts } = usePlaylists()
   const { speak } = useSpeech()
@@ -48,6 +50,22 @@ export default function App() {
     setIsFlipped(false)
     setCurrentIndex((i) => (i - 1 + filteredCards.length) % filteredCards.length)
   }, [filteredCards.length])
+
+  const goCategoryNext = useCallback(() => {
+    if (view !== 'study') return
+    setSelectedCategory((cat) => {
+      const idx = STUDY_CATEGORIES.indexOf(cat)
+      return STUDY_CATEGORIES[(idx + 1) % STUDY_CATEGORIES.length]
+    })
+  }, [view])
+
+  const goCategoryPrev = useCallback(() => {
+    if (view !== 'study') return
+    setSelectedCategory((cat) => {
+      const idx = STUDY_CATEGORIES.indexOf(cat)
+      return STUDY_CATEGORIES[(idx - 1 + STUDY_CATEGORIES.length) % STUDY_CATEGORIES.length]
+    })
+  }, [view])
 
   const handleFlip = useCallback(() => {
     setIsFlipped((f) => !f)
@@ -102,6 +120,16 @@ export default function App() {
         goPrev()
         return
       }
+      if (e.code === 'ArrowUp') {
+        e.preventDefault()
+        goCategoryPrev()
+        return
+      }
+      if (e.code === 'ArrowDown') {
+        e.preventDefault()
+        goCategoryNext()
+        return
+      }
       if (!currentCard) return
 
       if (key === 'v') {
@@ -120,7 +148,7 @@ export default function App() {
     }
     document.addEventListener('keydown', handler, true)
     return () => document.removeEventListener('keydown', handler, true)
-  }, [handleFlip, goNext, goPrev, handleSpeak, handleSetPlaylist, currentCard])
+  }, [handleFlip, goNext, goPrev, goCategoryNext, goCategoryPrev, handleSpeak, handleSetPlaylist, currentCard])
 
   return (
     <div className="app">

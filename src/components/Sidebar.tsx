@@ -110,7 +110,8 @@ export function Sidebar({
           <p className="shortcuts-title">Raccourcis</p>
           <ul>
             <li><kbd>Espace</kbd> Retourner</li>
-            <li><kbd>←</kbd> <kbd>→</kbd> Naviguer</li>
+            <li><kbd>←</kbd> <kbd>→</kbd> Cartes</li>
+            <li><kbd>↑</kbd> <kbd>↓</kbd> Catégories</li>
             <li><kbd>V</kbd> Prononcer</li>
             <li><kbd>W</kbd> Connu · <kbd>X</kbd> À retenir · <kbd>C</kbd> Pas connu</li>
           </ul>

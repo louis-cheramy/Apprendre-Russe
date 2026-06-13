@@ -6,9 +6,6 @@ export type VerbTense =
   | 'infinitif'
   | 'present'
   | 'passe_compose'
-  | 'imparfait'
-  | 'futur'
-  | 'imperatif'
 
 export interface VerbExample {
   tense: VerbTense
@@ -43,16 +40,10 @@ export const TENSE_LABELS: Record<VerbTense, string> = {
   infinitif: 'Infinitif',
   present: 'Présent',
   passe_compose: 'Passé composé',
-  imparfait: 'Imparfait',
-  futur: 'Futur',
-  imperatif: 'Impératif',
 }
 
 export const ALL_TENSES: VerbTense[] = [
   'infinitif',
   'present',
   'passe_compose',
-  'imparfait',
-  'futur',
-  'imperatif',
 ]
