@@ -59,25 +59,26 @@ export function Flashcard({
       )}
 
       <div
-        className={`flashcard ${isFlipped ? 'flipped' : ''}`}
+        className="flashcard"
         onClick={onFlip}
         role="button"
         tabIndex={0}
         aria-label={isFlipped ? 'Retourner la carte' : 'Voir la traduction'}
       >
-        <div className="flashcard-inner">
-          <div className="flashcard-front">
+        {!isFlipped ? (
+          <div className="flashcard-face flashcard-front">
             <span className="card-category">{CATEGORY_LABELS[card.category]}</span>
             {card.theme && <span className="card-theme">{card.theme}</span>}
             <p className="card-word card-word-fr">{card.french}</p>
             <span className="card-hint">Espace · V pour prononcer</span>
           </div>
-          <div className="flashcard-back">
+        ) : (
+          <div className="flashcard-face flashcard-back">
             <span className="card-category">{CATEGORY_LABELS[card.category]}</span>
             <p className="card-word card-word-ru">{card.russian}</p>
             <span className="card-hint">W · X · C pour classer · V pour prononcer</span>
           </div>
-        </div>
+        )}
       </div>
 
       {isVerb && example && example.french !== '—' && (

@@ -23,10 +23,13 @@ function createWindow() {
       contextIsolation: true,
     },
     autoHideMenuBar: true,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0039a6',
   })
 
-  win.once('ready-to-show', () => win.show())
+  win.once('ready-to-show', () => {
+    win.maximize()
+    win.show()
+  })
 
   if (isDev) {
     win.loadURL('http://localhost:5173')
