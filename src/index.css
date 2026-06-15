@@ -106,6 +106,12 @@ body {
   color: #fff;
 }
 
+.nav-tab.keyboard-focus,
+.category-btn.keyboard-focus {
+  outline: 2px solid var(--ru-red);
+  outline-offset: 2px;
+}
+
 .nav-tab:hover:not(.active) {
   border-color: var(--ru-blue);
   color: var(--text);
@@ -231,6 +237,40 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.passive-listen-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 57, 166, 0.35);
+  border-radius: var(--radius);
+  background: rgba(0, 57, 166, 0.08);
+  color: var(--ru-blue);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.passive-listen-btn:hover {
+  background: rgba(0, 57, 166, 0.14);
+  border-color: var(--ru-blue);
+}
+
+.passive-listen-btn.active {
+  background: var(--ru-blue);
+  border-color: var(--ru-blue);
+  color: #fff;
+}
+
+.passive-listen-btn.active .btn-kbd {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
 /* ── Flashcard ── */

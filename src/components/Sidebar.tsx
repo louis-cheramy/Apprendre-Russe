@@ -2,9 +2,11 @@ import type { Category, Playlist } from '../types'
 import { CATEGORY_LABELS, PLAYLIST_LABELS } from '../types'
 
 type View = 'study' | 'playlist'
+type NavFocus = 'tab' | 'list'
 
 interface SidebarProps {
   view: View
+  navFocus: NavFocus
   selectedCategory: Category | 'all'
   onCategoryChange: (cat: Category | 'all') => void
   selectedPlaylist: Exclude<Playlist, null> | null
@@ -19,6 +21,7 @@ interface SidebarProps {
 
 export function Sidebar({
   view,
+  navFocus,
   selectedCategory,
   onCategoryChange,
   selectedPlaylist,
@@ -42,16 +45,13 @@ export function Sidebar({
 
       <nav className="sidebar-nav">
         <button
-          className={`nav-tab ${view === 'study' ? 'active' : ''}`}
-          onClick={() => {
-            onViewChange('study')
-            onPlaylistChange(null)
-          }}
+          className={`nav-tab ${view === 'study' ? 'active' : ''} ${navFocus === 'tab' && view === 'study' ? 'keyboard-focus' : ''}`}
+          onClick={() => onViewChange('study')}
         >
           Étudier
         </button>
         <button
-          className={`nav-tab ${view === 'playlist' ? 'active' : ''}`}
+          className={`nav-tab ${view === 'playlist' ? 'active' : ''} ${navFocus === 'tab' && view === 'playlist' ? 'keyboard-focus' : ''}`}
           onClick={() => onViewChange('playlist')}
         >
           Playlists
@@ -65,7 +65,7 @@ export function Sidebar({
             {categories.map((cat) => (
               <li key={cat}>
                 <button
-                  className={`category-btn ${selectedCategory === cat ? 'active' : ''}`}
+                  className={`category-btn ${selectedCategory === cat ? 'active' : ''} ${navFocus === 'list' && selectedCategory === cat ? 'keyboard-focus' : ''}`}
                   onClick={() => onCategoryChange(cat)}
                 >
                   <span>
@@ -88,7 +88,7 @@ export function Sidebar({
             {playlists.map((pl) => (
               <li key={pl}>
                 <button
-                  className={`category-btn playlist-${pl} ${selectedPlaylist === pl ? 'active' : ''}`}
+                  className={`category-btn playlist-${pl} ${selectedPlaylist === pl ? 'active' : ''} ${navFocus === 'list' && selectedPlaylist === pl ? 'keyboard-focus' : ''}`}
                   onClick={() => onPlaylistChange(pl)}
                 >
                   <span>{PLAYLIST_LABELS[pl]}</span>
@@ -110,8 +110,9 @@ export function Sidebar({
           <p className="shortcuts-title">Raccourcis</p>
           <ul>
             <li><kbd>Espace</kbd> Retourner</li>
-            <li><kbd>←</kbd> <kbd>→</kbd> Cartes</li>
-            <li><kbd>↑</kbd> <kbd>↓</kbd> Catégories</li>
+            <li><kbd>↑</kbd> <kbd>↓</kbd> Thèmes / Playlists</li>
+            <li><kbd>←</kbd> <kbd>→</kbd> Onglets ou cartes</li>
+            <li><kbd>E</kbd> Écoute passive</li>
             <li><kbd>V</kbd> Prononcer</li>
             <li><kbd>W</kbd> Connu · <kbd>X</kbd> À retenir · <kbd>C</kbd> Pas connu</li>
           </ul>

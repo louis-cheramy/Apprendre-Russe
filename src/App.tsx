@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { vocabulary } from './data/vocabulary/index'
 import { useSpeech } from './hooks/useSpeech'
 import { speechText } from './lib/speech'
@@ -8,19 +8,24 @@ import { Flashcard } from './components/Flashcard'
 import type { Category, Playlist, VerbTense } from './types'
 
 type View = 'study' | 'playlist'
+type NavFocus = 'tab' | 'list'
 
 const STUDY_CATEGORIES: (Category | 'all')[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien']
+const PLAYLISTS: Exclude<Playlist, null>[] = ['connu', 'a_retenir', 'pas_connu']
 
 export default function App() {
   const { setCardPlaylist, getCardPlaylist, getCardsInPlaylist, counts } = usePlaylists()
-  const { speak } = useSpeech()
+  const { speak, speakAsync } = useSpeech()
 
   const [view, setView] = useState<View>('study')
+  const [navFocus, setNavFocus] = useState<NavFocus>('list')
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
   const [selectedPlaylist, setSelectedPlaylist] = useState<Exclude<Playlist, null> | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [selectedTense, setSelectedTense] = useState<VerbTense>('present')
+  const [passiveListening, setPassiveListening] = useState(false)
+  const passiveListeningRef = useRef(false)
 
   const categoryCounts = useMemo(() => {
     const c: Record<Category, number> = { verbe: 0, adjectif: 0, nom: 0, mot_lien: 0 }
@@ -52,20 +57,61 @@ export default function App() {
   }, [filteredCards.length])
 
   const goCategoryNext = useCallback(() => {
-    if (view !== 'study') return
     setSelectedCategory((cat) => {
       const idx = STUDY_CATEGORIES.indexOf(cat)
       return STUDY_CATEGORIES[(idx + 1) % STUDY_CATEGORIES.length]
     })
-  }, [view])
+  }, [])
 
   const goCategoryPrev = useCallback(() => {
-    if (view !== 'study') return
     setSelectedCategory((cat) => {
       const idx = STUDY_CATEGORIES.indexOf(cat)
       return STUDY_CATEGORIES[(idx - 1 + STUDY_CATEGORIES.length) % STUDY_CATEGORIES.length]
     })
+  }, [])
+
+  const goPlaylistNext = useCallback(() => {
+    setSelectedPlaylist((pl) => {
+      const current = pl ?? PLAYLISTS[0]
+      const idx = PLAYLISTS.indexOf(current)
+      return PLAYLISTS[(idx + 1) % PLAYLISTS.length]
+    })
+  }, [])
+
+  const goPlaylistPrev = useCallback(() => {
+    setSelectedPlaylist((pl) => {
+      const current = pl ?? PLAYLISTS[0]
+      const idx = PLAYLISTS.indexOf(current)
+      return PLAYLISTS[(idx - 1 + PLAYLISTS.length) % PLAYLISTS.length]
+    })
+  }, [])
+
+  const switchToStudy = useCallback(() => {
+    setView('study')
+    setSelectedPlaylist(null)
+  }, [])
+
+  const switchToPlaylist = useCallback(() => {
+    setView('playlist')
+  }, [])
+
+  const switchTab = useCallback(() => {
+    if (view === 'study') switchToPlaylist()
+    else switchToStudy()
+  }, [view, switchToStudy, switchToPlaylist])
+
+  const enterList = useCallback(() => {
+    setNavFocus('list')
+    if (view === 'study') {
+      setSelectedCategory(STUDY_CATEGORIES[0])
+    } else {
+      setSelectedPlaylist(PLAYLISTS[0])
+    }
   }, [view])
+
+  const exitListToTab = useCallback(() => {
+    setNavFocus('tab')
+  }, [])
 
   const handleFlip = useCallback(() => {
     setIsFlipped((f) => !f)
@@ -87,9 +133,60 @@ export default function App() {
     [currentCard, setCardPlaylist, goNext]
   )
 
+  const togglePassiveListening = useCallback(() => {
+    setPassiveListening((active) => {
+      const next = !active
+      passiveListeningRef.current = next
+      if (!next && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    passiveListeningRef.current = passiveListening
+  }, [passiveListening])
+
+  useEffect(() => {
+    if (!passiveListening || !currentCard || filteredCards.length === 0) return
+
+    let cancelled = false
+
+    const run = async () => {
+      setIsFlipped(false)
+      await speakAsync(speechText(currentCard.french), 'fr')
+      if (cancelled || !passiveListeningRef.current) return
+      await speakAsync(speechText(currentCard.russian), 'ru')
+      if (cancelled || !passiveListeningRef.current) return
+
+      const nextIndex = currentIndex + 1
+      if (nextIndex >= filteredCards.length) {
+        setPassiveListening(false)
+        passiveListeningRef.current = false
+        return
+      }
+      setCurrentIndex(nextIndex)
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
+    }
+  }, [passiveListening, currentIndex, currentCard, filteredCards.length, speakAsync])
+
   useEffect(() => {
     setCurrentIndex(0)
     setIsFlipped(false)
+    setPassiveListening(false)
+    passiveListeningRef.current = false
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
   }, [selectedCategory, selectedPlaylist, view])
 
   useEffect(() => {
@@ -112,24 +209,43 @@ export default function App() {
       }
       if (e.code === 'ArrowRight') {
         e.preventDefault()
-        goNext()
+        if (navFocus === 'tab') switchTab()
+        else goNext()
         return
       }
       if (e.code === 'ArrowLeft') {
         e.preventDefault()
-        goPrev()
+        if (navFocus === 'tab') switchTab()
+        else goPrev()
         return
       }
       if (e.code === 'ArrowUp') {
         e.preventDefault()
-        goCategoryPrev()
+        if (navFocus === 'tab') return
+        if (view === 'study') {
+          if (selectedCategory === STUDY_CATEGORIES[0]) exitListToTab()
+          else goCategoryPrev()
+        } else if (selectedPlaylist === PLAYLISTS[0] || !selectedPlaylist) {
+          exitListToTab()
+        } else {
+          goPlaylistPrev()
+        }
         return
       }
       if (e.code === 'ArrowDown') {
         e.preventDefault()
-        goCategoryNext()
+        if (navFocus === 'tab') enterList()
+        else if (view === 'study') goCategoryNext()
+        else goPlaylistNext()
         return
       }
+
+      if (key === 'e') {
+        e.preventDefault()
+        togglePassiveListening()
+        return
+      }
+
       if (!currentCard) return
 
       if (key === 'v') {
@@ -148,17 +264,47 @@ export default function App() {
     }
     document.addEventListener('keydown', handler, true)
     return () => document.removeEventListener('keydown', handler, true)
-  }, [handleFlip, goNext, goPrev, goCategoryNext, goCategoryPrev, handleSpeak, handleSetPlaylist, currentCard])
+  }, [
+    handleFlip,
+    goNext,
+    goPrev,
+    goCategoryNext,
+    goCategoryPrev,
+    goPlaylistNext,
+    goPlaylistPrev,
+    switchTab,
+    enterList,
+    exitListToTab,
+    handleSpeak,
+    handleSetPlaylist,
+    togglePassiveListening,
+    currentCard,
+    view,
+    navFocus,
+    selectedCategory,
+    selectedPlaylist,
+  ])
 
   return (
     <div className="app">
       <Sidebar
         view={view}
+        navFocus={navFocus}
         selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
+        onCategoryChange={(cat) => {
+          setSelectedCategory(cat)
+          setNavFocus('list')
+        }}
         selectedPlaylist={selectedPlaylist}
-        onPlaylistChange={setSelectedPlaylist}
-        onViewChange={setView}
+        onPlaylistChange={(pl) => {
+          setSelectedPlaylist(pl)
+          setNavFocus('list')
+        }}
+        onViewChange={(v) => {
+          setView(v)
+          setNavFocus('tab')
+          if (v === 'study') setSelectedPlaylist(null)
+        }}
         counts={counts}
         categoryCounts={categoryCounts}
         totalCards={vocabulary.length}
@@ -169,6 +315,14 @@ export default function App() {
       <main className="main-content">
         {currentCard ? (
           <div className="study-column">
+            <button
+              className={`passive-listen-btn ${passiveListening ? 'active' : ''}`}
+              onClick={togglePassiveListening}
+              title="Écoute passive (E)"
+            >
+              Écoute passive <kbd className="btn-kbd">E</kbd>
+            </button>
+
             <Flashcard
               card={currentCard}
               isFlipped={isFlipped}

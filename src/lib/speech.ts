@@ -46,13 +46,11 @@ export function speechText(raw: string): string {
     .trim()
 }
 
-export function speakWord(text: string, lang: SpeechLang): void {
-  if (!('speechSynthesis' in window)) return
+function createUtterance(text: string, lang: SpeechLang): SpeechSynthesisUtterance | null {
+  if (!('speechSynthesis' in window)) return null
 
   const cleaned = speechText(text)
-  if (!cleaned) return
-
-  window.speechSynthesis.cancel()
+  if (!cleaned) return null
 
   const voices = window.speechSynthesis.getVoices()
   if (voices.length > 0) {
@@ -76,7 +74,27 @@ export function speakWord(text: string, lang: SpeechLang): void {
     }
   }
 
-  window.speechSynthesis.speak(utterance)
+  return utterance
+}
+
+export function speakWord(text: string, lang: SpeechLang): void {
+  window.speechSynthesis.cancel()
+  const utterance = createUtterance(text, lang)
+  if (utterance) window.speechSynthesis.speak(utterance)
+}
+
+export function speakWordAsync(text: string, lang: SpeechLang): Promise<void> {
+  return new Promise((resolve) => {
+    window.speechSynthesis.cancel()
+    const utterance = createUtterance(text, lang)
+    if (!utterance) {
+      resolve()
+      return
+    }
+    utterance.onend = () => resolve()
+    utterance.onerror = () => resolve()
+    window.speechSynthesis.speak(utterance)
+  })
 }
 
 export function isSpeechSupported(): boolean {
