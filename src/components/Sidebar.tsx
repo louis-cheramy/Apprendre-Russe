@@ -64,51 +64,43 @@ export function Sidebar({
       </nav>
 
       {view === 'study' && (
-        <>
-          <section className="sidebar-section">
-            <h2 className="section-title">Thèmes</h2>
-            <ul className="category-list">
-              {categories.map((cat) => (
-                <li key={cat}>
-                  <button
-                    className={`category-btn ${selectedCategory === cat ? 'active' : ''} ${navFocus === 'list' && selectedCategory === cat ? 'keyboard-focus' : ''}`}
-                    onClick={() => onCategoryChange(cat)}
-                  >
-                    <span>
-                      {cat === 'all' ? 'Tous' : CATEGORY_LABELS[cat]}
-                    </span>
-                    <span className="count-badge">
-                      {cat === 'all' ? totalCards : categoryCounts[cat]}
-                    </span>
-                  </button>
-                </li>
-              ))}
-              <li>
+        <section className="sidebar-section">
+          <h2 className="section-title">Thèmes</h2>
+          <ul className="category-list">
+            {categories.map((cat) => (
+              <li key={cat}>
                 <button
-                  className={`category-btn ${selectedCategory === 'alphabet' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'alphabet' ? 'keyboard-focus' : ''}`}
-                  onClick={() => onCategoryChange('alphabet')}
+                  className={`category-btn ${selectedCategory === cat ? 'active' : ''} ${navFocus === 'list' && selectedCategory === cat ? 'keyboard-focus' : ''}`}
+                  onClick={() => onCategoryChange(cat)}
                 >
-                  <span>Alphabet</span>
-                  <span className="count-badge">{alphabetCount}</span>
+                  <span>
+                    {cat === 'all' ? 'Tous' : CATEGORY_LABELS[cat]}
+                  </span>
+                  <span className="count-badge">
+                    {cat === 'all' ? totalCards : categoryCounts[cat]}
+                  </span>
                 </button>
               </li>
-            </ul>
-          </section>
-
-          <section className="sidebar-section sidebar-settings-section">
-            <h2 className="section-title">Paramètres</h2>
-            <ul className="category-list">
-              <li>
-                <button
-                  className={`category-btn ${selectedCategory === 'settings' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'settings' ? 'keyboard-focus' : ''}`}
-                  onClick={() => onCategoryChange('settings')}
-                >
-                  <span>Réglages</span>
-                </button>
-              </li>
-            </ul>
-          </section>
-        </>
+            ))}
+            <li>
+              <button
+                className={`category-btn ${selectedCategory === 'alphabet' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'alphabet' ? 'keyboard-focus' : ''}`}
+                onClick={() => onCategoryChange('alphabet')}
+              >
+                <span>Alphabet</span>
+                <span className="count-badge">{alphabetCount}</span>
+              </button>
+            </li>
+            <li className="category-divider">
+              <button
+                className={`category-btn ${selectedCategory === 'settings' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'settings' ? 'keyboard-focus' : ''}`}
+                onClick={() => onCategoryChange('settings')}
+              >
+                <span>Réglages</span>
+              </button>
+            </li>
+          </ul>
+        </section>
       )}
 
       {view === 'playlist' && (

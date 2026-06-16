@@ -32,6 +32,9 @@ export default function App() {
   const [selectedTense, setSelectedTense] = useState<VerbTense>('present')
   const [passiveListening, setPassiveListening] = useState(false)
   const passiveListeningRef = useRef(false)
+  const passiveManualPauseRef = useRef(false)
+  const passiveResumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [passiveResumeToken, setPassiveResumeToken] = useState(0)
 
   const isAlphabetMode = view === 'study' && selectedCategory === 'alphabet'
   const isSettingsMode = view === 'study' && selectedCategory === 'settings'
@@ -58,17 +61,40 @@ export default function App() {
   const currentLetter = isAlphabetMode ? (CYRILLIC_ALPHABET[currentIndex] ?? null) : null
   const hasContent = isAlphabetMode ? currentLetter !== null : currentCard !== null
 
+  const schedulePassiveResume = useCallback(() => {
+    if (!passiveListeningRef.current) return
+
+    passiveManualPauseRef.current = true
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+
+    if (passiveResumeTimeoutRef.current) {
+      clearTimeout(passiveResumeTimeoutRef.current)
+    }
+
+    passiveResumeTimeoutRef.current = setTimeout(() => {
+      passiveManualPauseRef.current = false
+      passiveResumeTimeoutRef.current = null
+      if (passiveListeningRef.current) {
+        setPassiveResumeToken((t) => t + 1)
+      }
+    }, 1000)
+  }, [])
+
   const goNext = useCallback(() => {
     if (displayTotal === 0) return
     setIsFlipped(false)
     setCurrentIndex((i) => (i + 1) % displayTotal)
-  }, [displayTotal])
+    schedulePassiveResume()
+  }, [displayTotal, schedulePassiveResume])
 
   const goPrev = useCallback(() => {
     if (displayTotal === 0) return
     setIsFlipped(false)
     setCurrentIndex((i) => (i - 1 + displayTotal) % displayTotal)
-  }, [displayTotal])
+    schedulePassiveResume()
+  }, [displayTotal, schedulePassiveResume])
 
   const goCategoryNext = useCallback(() => {
     setSelectedCategory((cat) => {
@@ -166,8 +192,15 @@ export default function App() {
     setPassiveListening((active) => {
       const next = !active
       passiveListeningRef.current = next
-      if (!next && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel()
+      if (!next) {
+        passiveManualPauseRef.current = false
+        if (passiveResumeTimeoutRef.current) {
+          clearTimeout(passiveResumeTimeoutRef.current)
+          passiveResumeTimeoutRef.current = null
+        }
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel()
+        }
       }
       return next
     })
@@ -178,7 +211,7 @@ export default function App() {
   }, [passiveListening])
 
   useEffect(() => {
-    if (!passiveListening) return
+    if (!passiveListening || passiveManualPauseRef.current) return
 
     let cancelled = false
 
@@ -217,6 +250,7 @@ export default function App() {
     }
   }, [
     passiveListening,
+    passiveResumeToken,
     currentIndex,
     currentCard,
     currentLetter,
@@ -228,12 +262,27 @@ export default function App() {
   useEffect(() => {
     setCurrentIndex(0)
     setIsFlipped(false)
-    setPassiveListening(false)
-    passiveListeningRef.current = false
+    passiveManualPauseRef.current = false
+    if (passiveResumeTimeoutRef.current) {
+      clearTimeout(passiveResumeTimeoutRef.current)
+      passiveResumeTimeoutRef.current = null
+    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
     }
+    if (selectedCategory === 'settings') {
+      setPassiveListening(false)
+      passiveListeningRef.current = false
+    }
   }, [selectedCategory, selectedPlaylist, view])
+
+  useEffect(() => {
+    return () => {
+      if (passiveResumeTimeoutRef.current) {
+        clearTimeout(passiveResumeTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (currentIndex >= displayTotal && displayTotal > 0) {

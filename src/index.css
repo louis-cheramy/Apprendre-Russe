@@ -119,13 +119,13 @@ body {
 
 .sidebar-section {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
-.sidebar-settings-section {
-  flex: 0;
-  margin-top: 32px;
-  padding-top: 20px;
+.category-divider {
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
 }
 
