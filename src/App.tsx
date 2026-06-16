@@ -4,20 +4,23 @@ import { CYRILLIC_ALPHABET } from './data/alphabet'
 import { useSpeech } from './hooks/useSpeech'
 import { speechText } from './lib/speech'
 import { usePlaylists } from './hooks/usePlaylists'
+import { useSettings } from './hooks/useSettings'
 import { Sidebar } from './components/Sidebar'
 import { Flashcard } from './components/Flashcard'
 import { AlphabetFlashcard } from './components/AlphabetFlashcard'
+import { SettingsPanel } from './components/SettingsPanel'
 import type { Category, Playlist, VerbTense } from './types'
 
 type View = 'study' | 'playlist'
 type NavFocus = 'tab' | 'list'
-type StudyCategory = Category | 'all' | 'alphabet'
+type StudyCategory = Category | 'all' | 'alphabet' | 'settings'
 
-const STUDY_CATEGORIES: StudyCategory[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien', 'alphabet']
+const STUDY_CATEGORIES: StudyCategory[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien', 'alphabet', 'settings']
 const PLAYLISTS: Exclude<Playlist, null>[] = ['connu', 'a_retenir', 'pas_connu']
 
 export default function App() {
   const { setCardPlaylist, getCardPlaylist, getCardsInPlaylist, counts } = usePlaylists()
+  const { autoPronounceRussian, toggleAutoPronounceRussian } = useSettings()
   const { speak, speakAsync } = useSpeech()
 
   const [view, setView] = useState<View>('study')
@@ -31,6 +34,7 @@ export default function App() {
   const passiveListeningRef = useRef(false)
 
   const isAlphabetMode = view === 'study' && selectedCategory === 'alphabet'
+  const isSettingsMode = view === 'study' && selectedCategory === 'settings'
 
   const categoryCounts = useMemo(() => {
     const c: Record<Category, number> = { verbe: 0, adjectif: 0, nom: 0, mot_lien: 0 }
@@ -45,6 +49,7 @@ export default function App() {
     }
     if (selectedCategory === 'all') return vocabulary
     if (selectedCategory === 'alphabet') return []
+    if (selectedCategory === 'settings') return []
     return vocabulary.filter((c) => c.category === selectedCategory)
   }, [view, selectedCategory, selectedPlaylist, getCardsInPlaylist])
 
@@ -123,14 +128,19 @@ export default function App() {
   }, [])
 
   const handleFlip = useCallback(() => {
+    if (isSettingsMode) return
     setIsFlipped((f) => {
       const next = !f
-      if (next && isAlphabetMode && currentLetter) {
-        speak(currentLetter.speak, 'ru')
+      if (next && !passiveListeningRef.current) {
+        if (isAlphabetMode && currentLetter) {
+          speak(currentLetter.speak, 'ru')
+        } else if (autoPronounceRussian && currentCard) {
+          speak(speechText(currentCard.russian), 'ru')
+        }
       }
       return next
     })
-  }, [isAlphabetMode, currentLetter, speak])
+  }, [isSettingsMode, isAlphabetMode, currentLetter, currentCard, autoPronounceRussian, speak])
 
   const handleSpeak = useCallback(() => {
     if (isAlphabetMode && currentLetter) {
@@ -181,12 +191,7 @@ export default function App() {
         if (cancelled || !passiveListeningRef.current) return
 
         const nextIndex = currentIndex + 1
-        if (nextIndex >= CYRILLIC_ALPHABET.length) {
-          setPassiveListening(false)
-          passiveListeningRef.current = false
-          return
-        }
-        setCurrentIndex(nextIndex)
+        setCurrentIndex(nextIndex >= CYRILLIC_ALPHABET.length ? 0 : nextIndex)
         return
       }
 
@@ -199,12 +204,7 @@ export default function App() {
       if (cancelled || !passiveListeningRef.current) return
 
       const nextIndex = currentIndex + 1
-      if (nextIndex >= filteredCards.length) {
-        setPassiveListening(false)
-        passiveListeningRef.current = false
-        return
-      }
-      setCurrentIndex(nextIndex)
+      setCurrentIndex(nextIndex >= filteredCards.length ? 0 : nextIndex)
     }
 
     run()
@@ -292,6 +292,14 @@ export default function App() {
         return
       }
 
+      if (key === 's') {
+        e.preventDefault()
+        toggleAutoPronounceRussian()
+        return
+      }
+
+      if (isSettingsMode) return
+
       if (!hasContent) return
 
       if (key === 'v') {
@@ -326,6 +334,8 @@ export default function App() {
     handleSpeak,
     handleSetPlaylist,
     togglePassiveListening,
+    toggleAutoPronounceRussian,
+    isSettingsMode,
     currentCard,
     hasContent,
     isAlphabetMode,
@@ -360,11 +370,17 @@ export default function App() {
         totalCards={vocabulary.length}
         alphabetCount={CYRILLIC_ALPHABET.length}
         currentIndex={currentIndex}
-        filteredTotal={displayTotal}
+        filteredTotal={isSettingsMode ? 0 : displayTotal}
+        isSettingsMode={isSettingsMode}
       />
 
       <main className="main-content">
-        {hasContent ? (
+        {isSettingsMode ? (
+          <SettingsPanel
+            autoPronounceRussian={autoPronounceRussian}
+            onToggleAutoPronounceRussian={toggleAutoPronounceRussian}
+          />
+        ) : hasContent ? (
           <div className="study-column">
             <button
               className={`passive-listen-btn ${passiveListening ? 'active' : ''}`}

@@ -122,6 +122,13 @@ body {
   overflow-y: auto;
 }
 
+.sidebar-settings-section {
+  flex: 0;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
 .section-title {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -621,6 +628,127 @@ kbd {
 .empty-hint {
   font-size: 0.85rem;
   margin-top: 8px;
+}
+
+/* ── Settings ── */
+.settings-panel {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow);
+  color: var(--text-dark);
+}
+
+.settings-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  background: rgba(0, 57, 166, 0.03);
+}
+
+.setting-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.setting-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.setting-control {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.setting-toggle {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 72px;
+  height: 34px;
+  padding: 0 8px;
+  border: 2px solid rgba(0, 57, 166, 0.25);
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.setting-toggle.on {
+  background: rgba(0, 57, 166, 0.15);
+  border-color: var(--ru-blue);
+  justify-content: flex-end;
+}
+
+.setting-toggle.off {
+  justify-content: flex-start;
+}
+
+.setting-toggle-knob {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #94a3b8;
+  transition: background 0.15s;
+}
+
+.setting-toggle.on .setting-toggle-knob {
+  background: var(--ru-blue);
+}
+
+.setting-toggle-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.setting-toggle.on .setting-toggle-label {
+  color: var(--ru-blue);
+}
+
+.settings-hint {
+  margin-top: 20px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.settings-hint kbd {
+  color: var(--text-dark);
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* ── Scrollbar ── */
