@@ -3,20 +3,23 @@ import { CATEGORY_LABELS, PLAYLIST_LABELS } from '../types'
 
 type View = 'study' | 'playlist'
 type NavFocus = 'tab' | 'list'
+type StudyCategory = Category | 'all' | 'alphabet' | 'settings'
 
 interface SidebarProps {
   view: View
   navFocus: NavFocus
-  selectedCategory: Category | 'all'
-  onCategoryChange: (cat: Category | 'all') => void
+  selectedCategory: StudyCategory
+  onCategoryChange: (cat: StudyCategory) => void
   selectedPlaylist: Exclude<Playlist, null> | null
   onPlaylistChange: (pl: Exclude<Playlist, null> | null) => void
   onViewChange: (view: View) => void
   counts: { connu: number; a_retenir: number; pas_connu: number }
   categoryCounts: Record<Category, number>
   totalCards: number
+  alphabetCount: number
   currentIndex: number
   filteredTotal: number
+  isSettingsMode: boolean
 }
 
 export function Sidebar({
@@ -30,8 +33,10 @@ export function Sidebar({
   counts,
   categoryCounts,
   totalCards,
+  alphabetCount,
   currentIndex,
   filteredTotal,
+  isSettingsMode,
 }: SidebarProps) {
   const categories: (Category | 'all')[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien']
   const playlists: Exclude<Playlist, null>[] = ['connu', 'a_retenir', 'pas_connu']
@@ -77,6 +82,23 @@ export function Sidebar({
                 </button>
               </li>
             ))}
+            <li>
+              <button
+                className={`category-btn ${selectedCategory === 'alphabet' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'alphabet' ? 'keyboard-focus' : ''}`}
+                onClick={() => onCategoryChange('alphabet')}
+              >
+                <span>Alphabet</span>
+                <span className="count-badge">{alphabetCount}</span>
+              </button>
+            </li>
+            <li className="category-divider">
+              <button
+                className={`category-btn ${selectedCategory === 'settings' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'settings' ? 'keyboard-focus' : ''}`}
+                onClick={() => onCategoryChange('settings')}
+              >
+                <span>Réglages</span>
+              </button>
+            </li>
           </ul>
         </section>
       )}
@@ -103,7 +125,9 @@ export function Sidebar({
       <div className="sidebar-footer">
         <div className="progress-info">
           <span>
-            Carte {filteredTotal > 0 ? currentIndex + 1 : 0} / {filteredTotal}
+            {isSettingsMode
+              ? 'Paramètres'
+              : `Carte ${filteredTotal > 0 ? currentIndex + 1 : 0} / ${filteredTotal}`}
           </span>
         </div>
         <div className="shortcuts">
@@ -113,6 +137,7 @@ export function Sidebar({
             <li><kbd>↑</kbd> <kbd>↓</kbd> Thèmes / Playlists</li>
             <li><kbd>←</kbd> <kbd>→</kbd> Onglets ou cartes</li>
             <li><kbd>E</kbd> Écoute passive</li>
+            <li><kbd>S</kbd> Prononciation auto russe</li>
             <li><kbd>V</kbd> Prononcer</li>
             <li><kbd>W</kbd> Connu · <kbd>X</kbd> À retenir · <kbd>C</kbd> Pas connu</li>
           </ul>
