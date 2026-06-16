@@ -3,18 +3,20 @@ import { CATEGORY_LABELS, PLAYLIST_LABELS } from '../types'
 
 type View = 'study' | 'playlist'
 type NavFocus = 'tab' | 'list'
+type StudyCategory = Category | 'all' | 'alphabet'
 
 interface SidebarProps {
   view: View
   navFocus: NavFocus
-  selectedCategory: Category | 'all'
-  onCategoryChange: (cat: Category | 'all') => void
+  selectedCategory: StudyCategory
+  onCategoryChange: (cat: StudyCategory) => void
   selectedPlaylist: Exclude<Playlist, null> | null
   onPlaylistChange: (pl: Exclude<Playlist, null> | null) => void
   onViewChange: (view: View) => void
   counts: { connu: number; a_retenir: number; pas_connu: number }
   categoryCounts: Record<Category, number>
   totalCards: number
+  alphabetCount: number
   currentIndex: number
   filteredTotal: number
 }
@@ -30,6 +32,7 @@ export function Sidebar({
   counts,
   categoryCounts,
   totalCards,
+  alphabetCount,
   currentIndex,
   filteredTotal,
 }: SidebarProps) {
@@ -77,6 +80,15 @@ export function Sidebar({
                 </button>
               </li>
             ))}
+            <li>
+              <button
+                className={`category-btn ${selectedCategory === 'alphabet' ? 'active' : ''} ${navFocus === 'list' && selectedCategory === 'alphabet' ? 'keyboard-focus' : ''}`}
+                onClick={() => onCategoryChange('alphabet')}
+              >
+                <span>Alphabet</span>
+                <span className="count-badge">{alphabetCount}</span>
+              </button>
+            </li>
           </ul>
         </section>
       )}

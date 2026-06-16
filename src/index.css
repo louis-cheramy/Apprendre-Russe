@@ -231,6 +231,49 @@ kbd {
   min-height: 0;
 }
 
+/* ── Alphabet flashcard (main) ── */
+.alphabet-letter-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.alphabet-letter-upper {
+  font-family: 'Noto Sans', 'Inter', sans-serif;
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ru-blue);
+}
+
+.alphabet-letter-lower {
+  font-family: 'Noto Sans', 'Inter', sans-serif;
+  font-size: 1.8rem;
+  color: #64748b;
+}
+
+.alphabet-ipa-display {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.alphabet-ipa {
+  font-family: 'Charis SIL', 'Noto Sans', 'Inter', serif;
+  font-size: 3rem;
+  font-weight: 600;
+  color: var(--ru-blue);
+  letter-spacing: 0.02em;
+}
+
+.alphabet-ipa-bracket {
+  font-family: 'Charis SIL', 'Noto Sans', serif;
+  font-size: 2.4rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .study-column {
   width: 100%;
   max-width: 560px;

@@ -1,16 +1,19 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { vocabulary } from './data/vocabulary/index'
+import { CYRILLIC_ALPHABET } from './data/alphabet'
 import { useSpeech } from './hooks/useSpeech'
 import { speechText } from './lib/speech'
 import { usePlaylists } from './hooks/usePlaylists'
 import { Sidebar } from './components/Sidebar'
 import { Flashcard } from './components/Flashcard'
+import { AlphabetFlashcard } from './components/AlphabetFlashcard'
 import type { Category, Playlist, VerbTense } from './types'
 
 type View = 'study' | 'playlist'
 type NavFocus = 'tab' | 'list'
+type StudyCategory = Category | 'all' | 'alphabet'
 
-const STUDY_CATEGORIES: (Category | 'all')[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien']
+const STUDY_CATEGORIES: StudyCategory[] = ['all', 'verbe', 'adjectif', 'nom', 'mot_lien', 'alphabet']
 const PLAYLISTS: Exclude<Playlist, null>[] = ['connu', 'a_retenir', 'pas_connu']
 
 export default function App() {
@@ -19,13 +22,15 @@ export default function App() {
 
   const [view, setView] = useState<View>('study')
   const [navFocus, setNavFocus] = useState<NavFocus>('list')
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
+  const [selectedCategory, setSelectedCategory] = useState<StudyCategory>('all')
   const [selectedPlaylist, setSelectedPlaylist] = useState<Exclude<Playlist, null> | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [selectedTense, setSelectedTense] = useState<VerbTense>('present')
   const [passiveListening, setPassiveListening] = useState(false)
   const passiveListeningRef = useRef(false)
+
+  const isAlphabetMode = view === 'study' && selectedCategory === 'alphabet'
 
   const categoryCounts = useMemo(() => {
     const c: Record<Category, number> = { verbe: 0, adjectif: 0, nom: 0, mot_lien: 0 }
@@ -39,22 +44,26 @@ export default function App() {
       return vocabulary.filter((c) => ids.has(c.id))
     }
     if (selectedCategory === 'all') return vocabulary
+    if (selectedCategory === 'alphabet') return []
     return vocabulary.filter((c) => c.category === selectedCategory)
   }, [view, selectedCategory, selectedPlaylist, getCardsInPlaylist])
 
-  const currentCard = filteredCards[currentIndex] ?? null
+  const displayTotal = isAlphabetMode ? CYRILLIC_ALPHABET.length : filteredCards.length
+  const currentCard = !isAlphabetMode ? (filteredCards[currentIndex] ?? null) : null
+  const currentLetter = isAlphabetMode ? (CYRILLIC_ALPHABET[currentIndex] ?? null) : null
+  const hasContent = isAlphabetMode ? currentLetter !== null : currentCard !== null
 
   const goNext = useCallback(() => {
-    if (filteredCards.length === 0) return
+    if (displayTotal === 0) return
     setIsFlipped(false)
-    setCurrentIndex((i) => (i + 1) % filteredCards.length)
-  }, [filteredCards.length])
+    setCurrentIndex((i) => (i + 1) % displayTotal)
+  }, [displayTotal])
 
   const goPrev = useCallback(() => {
-    if (filteredCards.length === 0) return
+    if (displayTotal === 0) return
     setIsFlipped(false)
-    setCurrentIndex((i) => (i - 1 + filteredCards.length) % filteredCards.length)
-  }, [filteredCards.length])
+    setCurrentIndex((i) => (i - 1 + displayTotal) % displayTotal)
+  }, [displayTotal])
 
   const goCategoryNext = useCallback(() => {
     setSelectedCategory((cat) => {
@@ -114,15 +123,25 @@ export default function App() {
   }, [])
 
   const handleFlip = useCallback(() => {
-    setIsFlipped((f) => !f)
-  }, [])
+    setIsFlipped((f) => {
+      const next = !f
+      if (next && isAlphabetMode && currentLetter) {
+        speak(currentLetter.speak, 'ru')
+      }
+      return next
+    })
+  }, [isAlphabetMode, currentLetter, speak])
 
   const handleSpeak = useCallback(() => {
+    if (isAlphabetMode && currentLetter) {
+      speak(currentLetter.speak, 'ru')
+      return
+    }
     if (!currentCard) return
     const text = isFlipped ? currentCard.russian : currentCard.french
     const lang = isFlipped ? 'ru' : 'fr'
     speak(speechText(text), lang)
-  }, [currentCard, isFlipped, speak])
+  }, [isAlphabetMode, currentLetter, currentCard, isFlipped, speak])
 
   const handleSetPlaylist = useCallback(
     (playlist: Exclude<Playlist, null>) => {
@@ -149,11 +168,30 @@ export default function App() {
   }, [passiveListening])
 
   useEffect(() => {
-    if (!passiveListening || !currentCard || filteredCards.length === 0) return
+    if (!passiveListening) return
 
     let cancelled = false
 
     const run = async () => {
+      if (isAlphabetMode && currentLetter) {
+        setIsFlipped(false)
+        await speakAsync(currentLetter.speak, 'ru')
+        if (cancelled || !passiveListeningRef.current) return
+        await speakAsync(currentLetter.speak, 'ru')
+        if (cancelled || !passiveListeningRef.current) return
+
+        const nextIndex = currentIndex + 1
+        if (nextIndex >= CYRILLIC_ALPHABET.length) {
+          setPassiveListening(false)
+          passiveListeningRef.current = false
+          return
+        }
+        setCurrentIndex(nextIndex)
+        return
+      }
+
+      if (!currentCard || filteredCards.length === 0) return
+
       setIsFlipped(false)
       await speakAsync(speechText(currentCard.french), 'fr')
       if (cancelled || !passiveListeningRef.current) return
@@ -177,7 +215,15 @@ export default function App() {
         window.speechSynthesis.cancel()
       }
     }
-  }, [passiveListening, currentIndex, currentCard, filteredCards.length, speakAsync])
+  }, [
+    passiveListening,
+    currentIndex,
+    currentCard,
+    currentLetter,
+    filteredCards.length,
+    isAlphabetMode,
+    speakAsync,
+  ])
 
   useEffect(() => {
     setCurrentIndex(0)
@@ -190,10 +236,10 @@ export default function App() {
   }, [selectedCategory, selectedPlaylist, view])
 
   useEffect(() => {
-    if (currentIndex >= filteredCards.length && filteredCards.length > 0) {
+    if (currentIndex >= displayTotal && displayTotal > 0) {
       setCurrentIndex(0)
     }
-  }, [currentIndex, filteredCards.length])
+  }, [currentIndex, displayTotal])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -246,20 +292,22 @@ export default function App() {
         return
       }
 
-      if (!currentCard) return
+      if (!hasContent) return
 
       if (key === 'v') {
         e.preventDefault()
         handleSpeak()
-      } else if (key === 'w') {
-        e.preventDefault()
-        handleSetPlaylist('connu')
-      } else if (key === 'x') {
-        e.preventDefault()
-        handleSetPlaylist('a_retenir')
-      } else if (key === 'c') {
-        e.preventDefault()
-        handleSetPlaylist('pas_connu')
+      } else if (!isAlphabetMode && currentCard) {
+        if (key === 'w') {
+          e.preventDefault()
+          handleSetPlaylist('connu')
+        } else if (key === 'x') {
+          e.preventDefault()
+          handleSetPlaylist('a_retenir')
+        } else if (key === 'c') {
+          e.preventDefault()
+          handleSetPlaylist('pas_connu')
+        }
       }
     }
     document.addEventListener('keydown', handler, true)
@@ -279,6 +327,8 @@ export default function App() {
     handleSetPlaylist,
     togglePassiveListening,
     currentCard,
+    hasContent,
+    isAlphabetMode,
     view,
     navFocus,
     selectedCategory,
@@ -308,12 +358,13 @@ export default function App() {
         counts={counts}
         categoryCounts={categoryCounts}
         totalCards={vocabulary.length}
+        alphabetCount={CYRILLIC_ALPHABET.length}
         currentIndex={currentIndex}
-        filteredTotal={filteredCards.length}
+        filteredTotal={displayTotal}
       />
 
       <main className="main-content">
-        {currentCard ? (
+        {hasContent ? (
           <div className="study-column">
             <button
               className={`passive-listen-btn ${passiveListening ? 'active' : ''}`}
@@ -323,15 +374,23 @@ export default function App() {
               Écoute passive <kbd className="btn-kbd">E</kbd>
             </button>
 
-            <Flashcard
-              card={currentCard}
-              isFlipped={isFlipped}
-              onFlip={handleFlip}
-              selectedTense={selectedTense}
-              onTenseChange={setSelectedTense}
-              currentPlaylist={getCardPlaylist(currentCard.id)}
-              onSetPlaylist={handleSetPlaylist}
-            />
+            {isAlphabetMode && currentLetter ? (
+              <AlphabetFlashcard
+                letter={currentLetter}
+                isFlipped={isFlipped}
+                onFlip={handleFlip}
+              />
+            ) : currentCard ? (
+              <Flashcard
+                card={currentCard}
+                isFlipped={isFlipped}
+                onFlip={handleFlip}
+                selectedTense={selectedTense}
+                onTenseChange={setSelectedTense}
+                currentPlaylist={getCardPlaylist(currentCard.id)}
+                onSetPlaylist={handleSetPlaylist}
+              />
+            ) : null}
 
             <div className="nav-controls">
               <button className="nav-btn" onClick={goPrev} title="Carte précédente (←)">
